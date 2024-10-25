@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"gitea.home/smythbrjr/jankbot_go/text_casino/casino"
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
 )
@@ -17,14 +18,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	sess.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
-		if m.Author.ID == s.State.User.ID {
-			return
-		}
-		if m.Content == "ping" {
-			s.ChannelMessageSend(m.ChannelID, "Pong!")
-		}
-	})
+
+	sess.AddHandler(onMessage)
 	sess.Identify.Intents = discordgo.IntentsAll
 
 	err = sess.Open()
@@ -39,4 +34,35 @@ func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
+}
+
+func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
+	channel, err := s.Channel(m.ChannelID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	switch channel.Name {
+	case "casino":
+		go casino.HandleMessage(s, m)
+	case "ai-chat":
+		println("we got an AI chat message")
+		//route to AI chat module
+	case "jukebox-spam":
+		println("we got a jukebox spam message")
+		//route to jukebox request
+	case "ark-chat":
+		println("we got an ARK chat message")
+		//route to ARK module
+	case "ark-config":
+		println("we got an ARK config message")
+		//route to arkconfig
+	default:
+		return
+	}
 }
