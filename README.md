@@ -4,7 +4,7 @@ JankBot is a multipurpose Discord bot.
     - Deathroll
     - HiLo
 - *Table Games
-    -*Baccarat
+    - *Baccarat
 - Music Bot
 - Ark Server Monitor / Chat
 - AI chat with a 980 GTX
