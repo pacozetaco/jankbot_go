@@ -11,8 +11,9 @@ JankBot is a multipurpose Discord bot.
 
 * = have yet to implement, in any form of bot
 
-######
-Notes:
+##########
+##Notes:##
+##########
 
 -Torn between event handlers for each module or to have a switch statement in the main command handler.
     - If using event handlers for each mod, it would make each module read each event. If using a switch statement, it would make the main command handler more complex as the code grows. 
