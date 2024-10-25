@@ -1,13 +1,13 @@
 JankBot is a multipurpose Discord bot.
-    - Casino
-        - Blackjack
-        - Deathroll
-        - HiLo
-    -*Table Games
-        -*Baccarat
-    - Music Bot
-    - Ark Server Monitor / Chat
-    - AI chat with a 980 GTX
+- Casino
+    - Blackjack
+    - Deathroll
+    - HiLo
+- *Table Games
+    -*Baccarat
+- Music Bot
+- Ark Server Monitor / Chat
+- AI chat with a 980 GTX
 
 * = have yet to implement, in any form of bot
 
