@@ -11,7 +11,7 @@ JankBot is a multipurpose Discord bot.
 
 * = have yet to implement, in any form of bot
 
-
+######
 Notes:
 
 -Torn between event handlers for each module or to have a switch statement in the main command handler.
