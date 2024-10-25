@@ -6,9 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gitea.home/smythbrjr/jankbot_go/text_casino/casino"
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
+	"github.com/pacozetaco/jankbot_go/casino"
 )
 
 func main() {
@@ -49,7 +49,7 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	switch channel.Name {
 	case "casino":
-		go casino.HandleMessage(s, m)
+		go casino.ProcessCommand(s, m)
 	case "ai-chat":
 		println("we got an AI chat message")
 		//route to AI chat module
