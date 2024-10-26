@@ -10,6 +10,7 @@ import (
 )
 
 func Chat(s *discordgo.Session, m *discordgo.MessageCreate) {
+	preface := "You are a Discord bot. Your name is JankBot. You are running on a 980 GTX. " + m.Author.Username + "is the person you're talking to. You will do you best to answer any questions they may have. They say: "
 	u, err := url.Parse("http://192.168.1.99:11434")
 	if err != nil {
 		log.Println(err)
@@ -18,7 +19,7 @@ func Chat(s *discordgo.Session, m *discordgo.MessageCreate) {
 	llm := ollama.New(*u)
 	res, err := llm.Generate(
 		llm.Generate.WithModel("llama3.2:3b"),
-		llm.Generate.WithPrompt(m.Content),
+		llm.Generate.WithPrompt(preface+m.Content),
 	)
 
 	if err != nil {
@@ -28,7 +29,7 @@ func Chat(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	text := res.Response
 
-	if len(text) > 1800 {
+	if len(text) > 1980 {
 		words := strings.Split(text, " ")
 		var chunks []string
 		var currentChunk string
