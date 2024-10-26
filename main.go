@@ -8,6 +8,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
+	"github.com/pacozetaco/jankbot_go/aichat"
 	"github.com/pacozetaco/jankbot_go/casino"
 )
 
@@ -52,7 +53,7 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "casino":
 		casino.ProcessCommand(s, m)
 	case "ai-chat":
-		println("we got an AI chat message")
+		go aichat.Chat(s, m)
 		//route to AI chat module
 	case "jukebox-spam":
 		println("we got a jukebox spam message")

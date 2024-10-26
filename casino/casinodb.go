@@ -153,6 +153,18 @@ func getBalance(name string) (int, error) {
 	return balance, nil
 }
 
+func setBalance(name string, coins int) error {
+	err := createDBConnection()
+	if err != nil {
+		return err
+	}
+
+	defer closeDBConnection()
+
+	_, err = db.Exec("UPDATE jankcoins SET coins = coins + ? WHERE name = ?", coins, name)
+	return err
+}
+
 func dailyCoins(name string) string {
 
 	var lastClaim string
@@ -196,6 +208,6 @@ func dailyCoins(name string) string {
 	}
 }
 
-// func dbLogBJ(query string) {
+//TODO
 
-// }
+// GAME LOGS - STATS
