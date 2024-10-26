@@ -8,9 +8,10 @@ import (
 
 	"github.com/JexSrs/go-ollama"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pacozetaco/jankbot_go/bot"
 )
 
-func Chat(s *discordgo.Session, m *discordgo.MessageCreate) {
+func Chat(m *discordgo.MessageCreate) {
 	preface := "You are a Discord bot. Your name is JankBot. " + m.Author.Username + "is the person you're talking to. You will do you best to answer any questions they may have. They say: "
 	u, err := url.Parse("http://192.168.1.99:11434")
 	if err != nil {
@@ -31,7 +32,7 @@ func Chat(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if err != nil {
 		log.Println(err)
-		s.ChannelMessageSend(m.ChannelID, "Sum-Ting-Wong")
+		bot.S.ChannelMessageSend(m.ChannelID, "Sum-Ting-Wong")
 		return
 	}
 	text := res.Response
@@ -58,9 +59,9 @@ func Chat(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		for _, chunk := range chunks {
-			s.ChannelMessageSend(m.ChannelID, "```"+chunk+"```")
+			bot.S.ChannelMessageSend(m.ChannelID, "```"+chunk+"```")
 		}
 	} else {
-		s.ChannelMessageSend(m.ChannelID, "```"+text+"```")
+		bot.S.ChannelMessageSend(m.ChannelID, "```"+text+"```")
 	}
 }

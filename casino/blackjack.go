@@ -5,23 +5,23 @@ import (
 	"strconv"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/pacozetaco/jankbot_go/bot"
 )
 
-func startBlackJack(s *discordgo.Session, m *discordgo.MessageCreate, userStates *map[string]bool) {
+func startBlackJack(m *discordgo.MessageCreate) {
 	bet, err := strconv.Atoi(m.Content)
 	if err != nil {
 		log.Println(err)
+		bot.S.ChannelMessageSend(m.ChannelID, "Invalid bet")
 		return
 	}
-	balance, err := getBalance(m.Author.Username)
-	if err != nil {
-		log.Println(err)
+	ok, bal, rply := canPlay(m.Author.Username, bet)
+
+	if !ok {
+		bot.S.ChannelMessageSend(m.ChannelID, rply+"Balance: "+strconv.Itoa(bal))
 		return
 	}
 
-	if balance < bet {
-		s.ChannelMessageSend(m.ChannelID, "You don't have enough coins")
-		return
-	}
-	s.ChannelMessageSend(m.ChannelID, "Blackjack")
+	(userStates)[m.Author.Username] = true
+	bot.S.ChannelMessageSend(m.ChannelID, "Blackjack")
 }

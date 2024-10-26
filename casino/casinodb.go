@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -13,23 +14,7 @@ import (
 
 var db *sql.DB
 
-var (
-	user    string
-	pass    string
-	host    string
-	port    string
-	dbName  string
-	connStr string
-)
-
 func StartDb() {
-
-	user = os.Getenv("SQL_USER")
-	pass = os.Getenv("SQL_PASS")
-	host = os.Getenv("SQL_HOST")
-	port = os.Getenv("SQL_PORT")
-	dbName = os.Getenv("SQL_DB")
-	connStr = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, pass, host, port, dbName)
 
 	err := createDBConnection()
 	if err != nil {
@@ -46,6 +31,12 @@ func StartDb() {
 }
 
 func createDBConnection() error {
+	user := os.Getenv("SQL_USER")
+	pass := os.Getenv("SQL_PASS")
+	host := os.Getenv("SQL_HOST")
+	port := os.Getenv("SQL_PORT")
+	dbName := os.Getenv("SQL_DB")
+	connStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, pass, host, port, dbName)
 	var err error
 	db, err = sql.Open("mysql", connStr)
 	if err != nil {
@@ -194,7 +185,8 @@ func dailyCoins(name string) string {
 			return "error parsing last claim time"
 		}
 		if claimTime.Format("2006-01-02") == now.Format("2006-01-02") {
-			return "You already claimed today!"
+			bal := strconv.Itoa(coins)
+			return "You already claimed today! Balance: " + bal
 		} else {
 			_, err = db.Exec("UPDATE jankcoins SET coins = ?, lastclaim = ? WHERE name = ?", coins+100, now, name)
 			if err != nil {

@@ -7,32 +7,29 @@ import (
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
 	"github.com/pacozetaco/jankbot_go/aichat"
+	"github.com/pacozetaco/jankbot_go/bot"
 	"github.com/pacozetaco/jankbot_go/casino"
 )
 
 func main() {
-	godotenv.Load()
+	bot.StartBot()
+
+	// Check if bot.S is initialized
+	if bot.S == nil {
+		log.Fatal("Bot session is not initialized.")
+	}
+
+	bot.S.AddHandler(onMessage)
+
+	err := bot.S.Open()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer bot.S.Close()
+
+	log.Println("Bot is running!")
 	casino.StartDb()
-	token := os.Getenv("BOT_TOKEN")
-	sess, err := discordgo.New("Bot " + token)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	sess.AddHandler(onMessage)
-	sess.Identify.Intents = discordgo.IntentsAll
-
-	err = sess.Open()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer sess.Close()
-
-	println("Bot is running!")
-
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
@@ -51,19 +48,15 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	switch channel.Name {
 	case "casino":
-		casino.ProcessCommand(s, m)
+		casino.ProcessCommand(m)
 	case "ai-chat":
-		go aichat.Chat(s, m)
-		//route to AI chat module
+		go aichat.Chat(m)
 	case "jukebox-spam":
-		println("we got a jukebox spam message")
-		//route to jukebox request
+		log.Println("Received a jukebox spam message")
 	case "ark-chat":
-		println("we got an ARK chat message")
-		//route to ARK module
+		log.Println("Received an ARK chat message")
 	case "ark-config":
-		println("we got an ARK config message")
-		//route to arkconfig
+		log.Println("Received an ARK config message")
 	default:
 		return
 	}
