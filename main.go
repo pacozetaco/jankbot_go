@@ -13,6 +13,7 @@ import (
 
 func main() {
 	godotenv.Load()
+	casino.StartDb()
 	token := os.Getenv("BOT_TOKEN")
 	sess, err := discordgo.New("Bot " + token)
 	if err != nil {
@@ -49,7 +50,7 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	switch channel.Name {
 	case "casino":
-		go casino.ProcessCommand(s, m)
+		casino.ProcessCommand(s, m)
 	case "ai-chat":
 		println("we got an AI chat message")
 		//route to AI chat module
