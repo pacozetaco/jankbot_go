@@ -3,6 +3,7 @@ package aichat
 import (
 	"log"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/JexSrs/go-ollama"
@@ -10,8 +11,13 @@ import (
 )
 
 func Chat(s *discordgo.Session, m *discordgo.MessageCreate) {
-	preface := "You are a Discord bot. Your name is JankBot. You are running on a 980 GTX. " + m.Author.Username + "is the person you're talking to. You will do you best to answer any questions they may have. They say: "
+	preface := "You are a Discord bot. Your name is JankBot. " + m.Author.Username + "is the person you're talking to. You will do you best to answer any questions they may have. They say: "
 	u, err := url.Parse("http://192.168.1.99:11434")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	seed, err := strconv.Atoi(m.Message.ID)
 	if err != nil {
 		log.Println(err)
 		return
@@ -20,6 +26,7 @@ func Chat(s *discordgo.Session, m *discordgo.MessageCreate) {
 	res, err := llm.Generate(
 		llm.Generate.WithModel("llama3.2:3b"),
 		llm.Generate.WithPrompt(preface+m.Content),
+		llm.Generate.WithSeed(seed),
 	)
 
 	if err != nil {
