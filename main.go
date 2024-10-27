@@ -7,7 +7,7 @@ import (
 
 	"github.com/pacozetaco/jankbot_go/bot"
 	"github.com/pacozetaco/jankbot_go/casino"
-	"github.com/paczetaco/jankbot_go/handlers"
+	"github.com/pacozetaco/jankbot_go/handlers"
 )
 
 func main() {
