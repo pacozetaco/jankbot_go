@@ -9,6 +9,13 @@ import (
 	"github.com/pacozetaco/jankbot_go/bot"
 )
 
+var playAgainButton = &discordgo.Button{
+	Label:    "Play Again?",
+	Style:    3,
+	Disabled: false,
+	CustomID: "play",
+}
+
 type bG struct {
 	player   string
 	bal      int

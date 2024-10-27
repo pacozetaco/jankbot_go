@@ -200,6 +200,20 @@ func dailyCoins(name string) string {
 	}
 }
 
+func (h *hiLoG) logHiLo() {
+	createDBConnection()
+	defer closeDBConnection()
+	stmt, err := db.Prepare("INSERT INTO hilo_log (date, time, player, bet, choice, roll, result) VALUES (?, ?, ?, ?, ?, ?, ?)")
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(time.Now().Format("2006-01-02"), time.Now().Format("15:04:05"), h.player, h.bet, h.choice, h.roll, h.result)
+	if err != nil {
+		return
+	}
+}
+
 //TODO
 
 // GAME LOGS - STATS

@@ -25,13 +25,6 @@ func startHiLo(player string, chanID string, bet int, bal int) {
 		CustomID: "low",
 	}
 
-	playAgainButton := &discordgo.Button{
-		Label:    "Play Again?",
-		Style:    3,
-		Disabled: false,
-		CustomID: "play",
-	}
-
 	game := hiLoG{
 		bG: bG{
 			player:   player,
@@ -122,6 +115,8 @@ func (h *hiLoG) endHiLo() {
 	h.updateComplex()
 
 	userStates[h.player] = false
+
+	h.logHiLo()
 
 	if h.msg.Components != nil {
 		h.handleButtonClick()
