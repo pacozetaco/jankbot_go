@@ -16,37 +16,23 @@ type HiLoGame struct {
 	roll   int
 	result string
 	board  *discordgo.Message
-	msg    *discordgo.MessageCreate
+	mID    string
 }
 
-func startHiLo(m *discordgo.MessageCreate) {
-	bet, err := strconv.Atoi(m.Content)
-	if err != nil {
-		log.Println(err)
-		bot.S.ChannelMessageSend(m.ChannelID, "Invalid bet")
-		return
-	}
-	ok, bal, rply := canPlay(m.Author.Username, bet)
+func startHiLo(player string, mID string, bet int, bal int) {
 
-	if !ok {
-		bot.S.ChannelMessageSend(m.ChannelID, rply+"Balance: "+strconv.Itoa(bal))
-		return
-	}
-
-	(userStates)[m.Author.Username] = true
-	// Create a new instance of HiLoGame
 	game := HiLoGame{
-		player: m.Author.Username,
+		player: player,
 		bal:    bal,
 		bet:    bet,
-		msg:    m,
+		mID:    mID,
 	}
 	game.sendMessage()
 }
 
 func (h *HiLoGame) sendMessage() {
 	var err error
-	h.board, err = bot.S.ChannelMessageSend(h.msg.ChannelID, "Hi "+h.player+"! I am a game of Hi/Lo. You have "+strconv.Itoa(h.bal)+" coins. What is your bet?")
+	h.board, err = bot.S.ChannelMessageSend(h.mID, "Hi "+h.player+"! I am a game of Hi/Lo. You have "+strconv.Itoa(h.bal)+" coins. What is your bet?")
 	if err != nil {
 		log.Println(err)
 		return

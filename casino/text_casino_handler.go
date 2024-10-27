@@ -2,6 +2,7 @@ package casino
 
 import (
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -12,29 +13,46 @@ var (
 	userStates = make(map[string]bool)
 )
 
-func formatBet(prefix string, ctx string) string {
-	ctx = strings.TrimPrefix(ctx, prefix)
-	ctx = strings.TrimSpace(ctx)
-	return ctx
-}
-
 func ProcessCommand(m *discordgo.MessageCreate) {
+
 	switch {
-	case strings.HasPrefix(m.Content, "bj"):
-		m.Content = formatBet("bj", m.Content)
-		go startBlackJack(m)
-	case strings.HasPrefix(m.Content, "hilo"):
-		m.Content = formatBet("hilo", m.Content)
-		go startHiLo(m)
-	case strings.HasPrefix(m.Content, "dr"):
-		m.Content = formatBet("dr", m.Content)
-		go startDeathRoll(m)
 	case strings.HasPrefix(m.Content, "daily"):
-		player := m.Author.Username
-		reply := dailyCoins(player)
+		reply := dailyCoins(m.Author.Username)
 		bot.S.ChannelMessageSend(m.ChannelID, reply)
-	default:
 		return
+	}
+
+	gameMap := map[string]func(player string, mID string, bet int, bal int){
+		"hilo": startHiLo,
+		"bj":   startBlackJack,
+		"dr":   startDeathRoll,
+	}
+
+	for prefix, handler := range gameMap {
+		if strings.HasPrefix(m.Content, prefix) {
+			//trim up the prefix
+			content := strings.TrimPrefix(m.Content, prefix)
+			//clean up space
+			content = strings.TrimSpace(content)
+			//convert bet to int instead of string
+			bet, err := strconv.Atoi(content)
+			if err != nil {
+				bot.S.ChannelMessageSend(m.ChannelID, "Invalid bet, check your syntax.")
+				return
+			}
+			ok, bal, reply := canPlay(m.Author.Username, bet)
+			{
+				//check if user isnt in a game and has enough coins to play
+				if !ok {
+					bot.S.ChannelMessageSend(m.ChannelID, reply)
+					//else start the game and add them to userStates
+				} else {
+					userStates[m.Author.Username] = true
+					go handler(m.Author.Username, m.ChannelID, bet, bal)
+				}
+			}
+			return
+		}
 	}
 }
 
@@ -53,7 +71,7 @@ func canPlay(authorID string, bet int) (bool, int, string) {
 	}
 	switch {
 	case bal < bet:
-		return false, bal, "You don't have enough coins"
+		return false, bal, "You don't have enough coins. Balance: " + strconv.Itoa(bal)
 	default:
 		return true, bal, ""
 
