@@ -31,7 +31,7 @@ func startHiLo(player string, chanID string, bet int, bal int) {
 			bal:      bal,
 			bet:      bet,
 			mID:      chanID,
-			pAButton: playAgainButton,
+			pAButton: pAButton,
 		},
 		diceG: diceG{
 			roll: rand.Intn(100) + 1,
@@ -40,14 +40,24 @@ func startHiLo(player string, chanID string, bet int, bal int) {
 		lo: loButton,
 	}
 
-	game.initializeHiLo()
-	game.handleButtonClick()
+	err := game.initializeHiLo()
+	if err != nil {
+		log.Println(err)
+		userStates[player] = false
+		return
+	}
+	err = game.handleButtonClick()
+	if err != nil {
+		log.Println(err)
+		userStates[player] = false
+		return
+	}
 	game.gameLogic()
 	game.endHiLo()
 
 }
 
-func (h *hiLoG) initializeHiLo() {
+func (h *hiLoG) initializeHiLo() error {
 	var err error
 	content := fmt.Sprintf("```HiLo! Bet: %d\nIs your roll higher or lower than 50? (/roll 1-100)```", h.bet)
 	h.msg = &discordgo.MessageSend{
@@ -61,10 +71,11 @@ func (h *hiLoG) initializeHiLo() {
 	h.board, err = bot.S.ChannelMessageSendComplex(h.mID, h.msg)
 	if err != nil {
 		log.Println(err)
-		bot.S.ChannelMessageSend(h.mID, "Game malfunction, no coins deducted.")
 		userStates[h.player] = false
+		return err
 	}
 	bot.Chans[h.board.ID] = make(chan *discordgo.InteractionCreate)
+	return nil
 }
 
 func (h *hiLoG) gameLogic() {
@@ -87,16 +98,8 @@ func (h *hiLoG) gameLogic() {
 		}
 	case "timeout":
 		h.result = "lost"
-
 	}
-	switch h.result {
-	case "won":
-		addBalance(h.player, h.bet)
-		h.bal += h.bet
-	case "lost":
-		addBalance(h.player, -h.bet)
-		h.bal -= h.bet
-	}
+	h.gameTransact()
 }
 
 func (h *hiLoG) endHiLo() {

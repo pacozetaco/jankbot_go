@@ -10,16 +10,17 @@ import (
 )
 
 func OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
+	//ignore messages from itself
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-
+	//get the channel name from the id
 	channel, err := s.Channel(m.ChannelID)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	println("we have a message")
+	//route mesages to proper area
 	switch channel.Name {
 	case "casino":
 		go casino.ProcessCommand(m)
@@ -36,6 +37,8 @@ func OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
+// on button press or time emoji, check to see if theres a channel associated with the message ID
+// if there is a match, send it to the function waiting for it
 func ButtonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if channel, ok := bot.Chans[i.Message.ID]; ok {
 		channel <- i

@@ -15,7 +15,7 @@ import (
 var db *sql.DB
 
 func init() {
-
+	//init all the tables if not exist on startup
 	err := createDBConnection()
 	if err != nil {
 		log.Fatal("error connecting to db", err)
@@ -30,6 +30,7 @@ func init() {
 
 }
 
+// func for all db connections
 func createDBConnection() error {
 	user := os.Getenv("SQL_USER")
 	pass := os.Getenv("SQL_PASS")
@@ -45,6 +46,7 @@ func createDBConnection() error {
 	return nil
 }
 
+// dunc to close the conection
 func closeDBConnection() {
 	err := db.Close()
 	if err != nil {
@@ -125,6 +127,7 @@ func createDeathrollTable() {
 	}
 }
 
+// get coin balance
 func getBalance(name string) (int, error) {
 	err := createDBConnection()
 	if err != nil {
@@ -136,7 +139,6 @@ func getBalance(name string) (int, error) {
 	err = db.QueryRow("SELECT coins FROM jankcoins WHERE name = ?", name).Scan(&balance)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			//add them into the table and go a !daily for them
 			return -1, errors.New("balance not found")
 		}
 		return -2, err
@@ -144,6 +146,7 @@ func getBalance(name string) (int, error) {
 	return balance, nil
 }
 
+// add or subtract coins
 func addBalance(name string, coins int) error {
 	err := createDBConnection()
 	if err != nil {
@@ -156,6 +159,7 @@ func addBalance(name string, coins int) error {
 	return err
 }
 
+// daily coins, set at 100 rn
 func dailyCoins(name string) string {
 
 	var lastClaim string
@@ -200,6 +204,7 @@ func dailyCoins(name string) string {
 	}
 }
 
+// log hilo game
 func (h *hiLoG) logHiLo() {
 	createDBConnection()
 	defer closeDBConnection()
@@ -209,6 +214,20 @@ func (h *hiLoG) logHiLo() {
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(time.Now().Format("2006-01-02"), time.Now().Format("15:04:05"), h.player, h.bet, h.choice, h.roll, h.result)
+	if err != nil {
+		return
+	}
+}
+
+func (d *deathRollG) logDeathRoll() {
+	createDBConnection()
+	defer closeDBConnection()
+	stmt, err := db.Prepare("INSERT INTO deathroll_log (date, time, player, bet, whofirst, result, gamecontent) VALUES (?, ?, ?, ?, ?, ?, ?)")
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(time.Now().Format("2006-01-02"), time.Now().Format("15:04:05"), d.player, d.bet, d.first, d.result, d.msg.Content)
 	if err != nil {
 		return
 	}

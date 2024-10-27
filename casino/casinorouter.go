@@ -45,7 +45,7 @@ func ProcessCommand(m *discordgo.MessageCreate) {
 				//check if user isnt in a game and has enough coins to play
 				if !ok {
 					bot.S.ChannelMessageSend(m.ChannelID, reply)
-					//else start the game and add them to userStates
+					//else start the game and set userStates to true
 				} else {
 					userStates[m.Author.Username] = true
 					game(m.Author.Username, m.ChannelID, bet, bal)
@@ -57,11 +57,13 @@ func ProcessCommand(m *discordgo.MessageCreate) {
 }
 
 func canPlay(authorID string, bet int) (bool, int, string) {
+	//get user balance if doesnt exist set to 0
 	bal, err := getBalance(authorID)
 	if err != nil {
 		log.Println(err)
 		bal = 0
 	}
+	//check if the user is playing another game
 	isPlaying, ok := userStates[authorID]
 	switch {
 	case !ok:
@@ -69,6 +71,7 @@ func canPlay(authorID string, bet int) (bool, int, string) {
 	case isPlaying:
 		return false, bal, "You're already playing. "
 	}
+	//check if they have enough coin
 	switch {
 	case bal < bet:
 		return false, bal, "You don't have enough coins. Balance: " + strconv.Itoa(bal)
