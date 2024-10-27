@@ -144,7 +144,7 @@ func getBalance(name string) (int, error) {
 	return balance, nil
 }
 
-func setBalance(name string, coins int) error {
+func addBalance(name string, coins int) error {
 	err := createDBConnection()
 	if err != nil {
 		return err

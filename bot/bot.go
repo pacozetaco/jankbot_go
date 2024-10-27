@@ -9,6 +9,7 @@ import (
 )
 
 var S *discordgo.Session
+var Channels = make(map[string]chan *discordgo.InteractionCreate)
 
 func StartBot() {
 	// Load environment variables
@@ -28,4 +29,18 @@ func StartBot() {
 	}
 
 	S.Identify.Intents = discordgo.IntentsAll
+
+	if S == nil {
+		log.Fatal("Bot session is not initialized.")
+	}
+
+	err = S.Open()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer S.Close()
+
+	log.Println("Bot is running!")
+
 }

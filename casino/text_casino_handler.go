@@ -14,21 +14,21 @@ var (
 )
 
 func ProcessCommand(m *discordgo.MessageCreate) {
-
+	//first switch to handle any casino commands first, they are first because they do not need to go through formatting/ i want to make a function to execute commands so i can add as many as i want easily
 	switch {
 	case strings.HasPrefix(m.Content, "daily"):
 		reply := dailyCoins(m.Author.Username)
 		bot.S.ChannelMessageSend(m.ChannelID, reply)
 		return
 	}
-
+	//game map to break out into different games, these go through checks and format for start of the game
 	gameMap := map[string]func(player string, mID string, bet int, bal int){
 		"hilo": startHiLo,
 		"bj":   startBlackJack,
 		"dr":   startDeathRoll,
 	}
 
-	for prefix, handler := range gameMap {
+	for prefix, game := range gameMap {
 		if strings.HasPrefix(m.Content, prefix) {
 			//trim up the prefix
 			content := strings.TrimPrefix(m.Content, prefix)
@@ -48,7 +48,7 @@ func ProcessCommand(m *discordgo.MessageCreate) {
 					//else start the game and add them to userStates
 				} else {
 					userStates[m.Author.Username] = true
-					go handler(m.Author.Username, m.ChannelID, bet, bal)
+					game(m.Author.Username, m.ChannelID, bet, bal)
 				}
 			}
 			return
