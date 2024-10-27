@@ -38,7 +38,7 @@ func (g *bG) handleButtonClick() {
 
 	for {
 		select {
-		case i := <-bot.Channels[g.board.ID]:
+		case i := <-bot.Chans[g.board.ID]:
 			clicker := i.Member.User.Username
 			if clicker == g.player {
 				fmt.Printf("User %s clicked button: %s\n", clicker, i.MessageComponentData().CustomID)

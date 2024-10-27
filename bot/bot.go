@@ -9,9 +9,9 @@ import (
 )
 
 var S *discordgo.Session
-var Channels = make(map[string]chan *discordgo.InteractionCreate)
+var Chans = make(map[string]chan *discordgo.InteractionCreate)
 
-func StartBot() {
+func init() {
 	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
@@ -39,7 +39,6 @@ func StartBot() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer S.Close()
 
 	log.Println("Bot is running!")
 

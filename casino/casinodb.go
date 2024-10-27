@@ -14,7 +14,7 @@ import (
 
 var db *sql.DB
 
-func StartDb() {
+func init() {
 
 	err := createDBConnection()
 	if err != nil {

@@ -37,7 +37,7 @@ func OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func ButtonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if channel, ok := bot.Channels[i.Message.ID]; ok {
+	if channel, ok := bot.Chans[i.Message.ID]; ok {
 		channel <- i
 	}
 }

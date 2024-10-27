@@ -71,7 +71,7 @@ func (h *hiLoG) initializeHiLo() {
 		bot.S.ChannelMessageSend(h.mID, "Game malfunction, no coins deducted.")
 		userStates[h.player] = false
 	}
-	bot.Channels[h.board.ID] = make(chan *discordgo.InteractionCreate)
+	bot.Chans[h.board.ID] = make(chan *discordgo.InteractionCreate)
 }
 
 func (h *hiLoG) gameLogic() {
@@ -128,8 +128,8 @@ func (h *hiLoG) endHiLo() {
 		h.msg.Components = []discordgo.MessageComponent{}
 		h.updateComplex()
 	}
-	close(bot.Channels[h.board.ID])
-	delete(bot.Channels, h.board.ID)
+	close(bot.Chans[h.board.ID])
+	delete(bot.Chans, h.board.ID)
 
 	if h.choice == "play" && h.bal > h.bet && !userStates[h.player] {
 		startHiLo(h.player, h.mID, h.bet, h.bal)
