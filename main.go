@@ -17,7 +17,9 @@ func main() {
 	casino.StartDb()
 
 	bot.S.AddHandler(handlers.OnMessage)
+	println("onmsg loaded")
 	bot.S.AddHandler(handlers.ButtonHandler)
+	println("button handler loaded")
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)

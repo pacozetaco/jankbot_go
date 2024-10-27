@@ -19,7 +19,7 @@ func OnMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		log.Println(err)
 		return
 	}
-
+	println("we have a message")
 	switch channel.Name {
 	case "casino":
 		go casino.ProcessCommand(m)
