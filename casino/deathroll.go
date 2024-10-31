@@ -6,12 +6,11 @@ import (
 	"math/rand"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/pacozetaco/jankbot_go/bot"
 )
 
 func startDeathRoll(player string, mID string, bet int, bal int) {
 
-	game := deathRollG{
+	game := &deathRollG{
 		bG: bG{
 			player:   player,
 			bal:      bal,
@@ -47,27 +46,16 @@ func startDeathRoll(player string, mID string, bet int, bal int) {
 		return
 	}
 	game.drLogic()
-	game.endDR()
+	game.endGame(startDeathRoll)
 
 }
 
 func (d *deathRollG) initializeDR() error {
 	content := fmt.Sprintf("Deathroll! Bet: %d\nWho goes first? (/roll 1-100)", d.bet)
-	d.msg = &discordgo.MessageSend{
-		Content: content,
-		Components: []discordgo.MessageComponent{
-			discordgo.ActionsRow{
-				Components: []discordgo.MessageComponent{d.you, d.jb},
-			},
-		},
-	}
-	var err error
-	d.board, err = bot.S.ChannelMessageSendComplex(d.mID, d.msg)
+	err := d.sendComplex(content, []discordgo.Button{*d.you, *d.jb})
 	if err != nil {
-		log.Println(err)
 		return err
 	}
-	bot.Chans[d.board.ID] = make(chan *discordgo.InteractionCreate)
 	return nil
 }
 
@@ -95,12 +83,7 @@ func (d *deathRollG) drLoop() error {
 			d.roll = rand.Intn(d.roll) + 1
 			d.msg.Content += fmt.Sprintf("\nJB rolled a %d", d.roll)
 		case d.turn == "you" && d.choice != "auto":
-			d.msg.Components = []discordgo.MessageComponent{
-				discordgo.ActionsRow{
-					Components: []discordgo.MessageComponent{d.rollbuttn, d.autoroll},
-				},
-			}
-			d.updateComplex()
+			d.updateComplex([]discordgo.Button{*d.rollbuttn, *d.autoroll})
 			err := d.handleButtonClick()
 			if err != nil {
 				log.Println(err)
@@ -138,31 +121,5 @@ func (d *deathRollG) drLogic() {
 		d.result = "lost"
 	}
 	d.gameTransact()
-}
-
-func (d *deathRollG) endDR() {
-	if d.bal > d.bet {
-		d.msg.Components = []discordgo.MessageComponent{
-			discordgo.ActionsRow{
-				Components: []discordgo.MessageComponent{d.pAButton},
-			},
-		}
-	} else {
-		d.msg.Components = []discordgo.MessageComponent{}
-	}
-	d.msg.Content += fmt.Sprintf("\nYou %s %d coins.\nBalance: %d", d.result, d.bet, d.bal)
-	userStates[d.player] = false
-	d.updateComplex()
 	d.logDeathRoll()
-	if d.msg.Components != nil {
-		d.handleButtonClick()
-		d.msg.Components = []discordgo.MessageComponent{}
-		d.updateComplex()
-	}
-	close(bot.Chans[d.board.ID])
-	delete(bot.Chans, d.board.ID)
-
-	if d.choice == "play" && d.bal > d.bet && !userStates[d.player] {
-		startDeathRoll(d.player, d.mID, d.bet, d.bal)
-	}
 }

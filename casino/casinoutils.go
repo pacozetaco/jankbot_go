@@ -3,12 +3,14 @@ package casino
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pacozetaco/jankbot_go/bot"
 )
 
+// BUTTONS
 // play again button for all the games
 var pAButton = &discordgo.Button{
 	Label:    "Play Again?",
@@ -45,6 +47,49 @@ var jbbutn = &discordgo.Button{
 	CustomID: "jb",
 }
 
+var hiButton = &discordgo.Button{
+	Label:    "Hi",
+	Style:    3,
+	Disabled: false,
+	CustomID: "high",
+}
+
+var loButton = &discordgo.Button{
+	Label:    "Lo",
+	Style:    4,
+	Disabled: false,
+	CustomID: "low",
+}
+
+var hitButton = &discordgo.Button{
+	Label:    "Hit",
+	Style:    3,
+	Disabled: false,
+	CustomID: "hit",
+}
+
+var standButton = &discordgo.Button{
+	Label:    "Stand",
+	Style:    4,
+	Disabled: false,
+	CustomID: "stand",
+}
+
+var doubleDButton = &discordgo.Button{
+	Label:    "Double Down",
+	Style:    3,
+	Disabled: false,
+	CustomID: "double",
+}
+
+var splitButton = &discordgo.Button{
+	Label:    "Split",
+	Style:    4,
+	Disabled: false,
+	CustomID: "split",
+}
+
+// STRUCTS
 // basic game stuct all games will use
 type bG struct {
 	player   string
@@ -56,6 +101,12 @@ type bG struct {
 	mID      string
 	choice   string
 	pAButton *discordgo.Button
+}
+
+type cardG struct {
+	deck       []string
+	playerHand []string
+	jBHand     []string
 }
 
 // dice game struc
@@ -72,6 +123,19 @@ type deathRollG struct {
 	autoroll  *discordgo.Button
 	turn      string
 	first     string
+}
+
+// blackjack struct
+type blackJackG struct {
+	bG
+	cardG
+	whosturn        string
+	stand           *discordgo.Button
+	hit             *discordgo.Button
+	doubled         *discordgo.Button
+	split           *discordgo.Button
+	playerHandValue int
+	jBHandValue     int
 }
 
 // hilo struct
@@ -97,7 +161,7 @@ func (g *bG) handleButtonClick() error {
 					Type: discordgo.InteractionResponseDeferredMessageUpdate,
 				})
 				if err != nil {
-					fmt.Printf("Failed to respond to interaction: %v\n", err)
+					log.Printf("Failed to respond to interaction: %v\n", err)
 					return err
 				}
 				g.choice = i.MessageComponentData().CustomID
@@ -107,12 +171,12 @@ func (g *bG) handleButtonClick() error {
 					Type: discordgo.InteractionResponseDeferredMessageUpdate,
 				})
 				if err != nil {
-					fmt.Printf("Failed to respond to interaction: %v\n", err)
+					log.Printf("Failed to respond to interaction: %v\n", err)
 					return err
 				}
 			}
 		case <-timer.C:
-			fmt.Println("Timer expired, setting choice to timeout.")
+			log.Println("Timer expired, setting choice to timeout.")
 			g.choice = "timeout"
 			return nil
 		}
@@ -120,16 +184,85 @@ func (g *bG) handleButtonClick() error {
 }
 
 // updating gameboard func
-func (g *bG) updateComplex() {
-	updatedMsg := &discordgo.MessageEdit{
-		Channel:    g.board.ChannelID,
-		ID:         g.board.ID,
-		Content:    &g.msg.Content,
-		Components: &g.msg.Components,
+func (g *bG) updateComplex(buttons []discordgo.Button) {
+	var components []discordgo.MessageComponent
+	for _, button := range buttons {
+		components = append(components, button) // Append each button as a MessageComponent
 	}
+	g.msg.Components = []discordgo.MessageComponent{
+		discordgo.ActionsRow{
+			Components: components,
+		},
+	}
+	if buttons == nil {
+		g.msg.Components = []discordgo.MessageComponent{}
+	}
+	updatedMsg := &discordgo.MessageEdit{
+		Channel:     g.board.ChannelID,
+		ID:          g.board.ID,
+		Content:     &g.msg.Content,
+		Components:  &g.msg.Components,
+		Attachments: &g.board.Attachments,
+	}
+
 	_, err := bot.S.ChannelMessageEditComplex(updatedMsg)
 	if err != nil {
 		log.Println(err)
+	}
+}
+
+func (b *bG) sendComplex(content string, buttons []discordgo.Button) error {
+	// Create a slice of MessageComponent to hold the buttons
+	var components []discordgo.MessageComponent
+	for _, button := range buttons {
+		components = append(components, button) // Append each button as a MessageComponent
+	}
+	b.msg = &discordgo.MessageSend{
+		Content: content,
+		Components: []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: components,
+			},
+		},
+	}
+
+	if buttons == nil {
+		b.msg.Components = []discordgo.MessageComponent{}
+	}
+
+	var err error
+	b.board, err = bot.S.ChannelMessageSendComplex(b.mID, b.msg)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	bot.Chans[b.board.ID] = make(chan *discordgo.InteractionCreate)
+	return nil
+}
+
+type startFuncType func(playerID string, mID string, bet int, balance int)
+
+func (g *bG) endGame(startFunc startFuncType) {
+	g.msg.Content += fmt.Sprintf("\nYou %s %d coins.\nBalance: %d", g.result, g.bet, g.bal)
+	if g.bal > g.bet {
+		g.updateComplex([]discordgo.Button{*pAButton})
+	} else {
+		g.updateComplex(nil)
+	}
+	userStates[g.player] = false
+
+	// h.logHiLo()
+
+	if g.msg.Components != nil {
+		g.handleButtonClick()
+		g.updateComplex(nil)
+	}
+	close(bot.Chans[g.board.ID])
+	delete(bot.Chans, g.board.ID)
+
+	if g.choice == "play" && g.bal > g.bet && !userStates[g.player] {
+		startFunc(g.player, g.mID, g.bet, g.bal)
 	}
 }
 
@@ -143,5 +276,30 @@ func (g *bG) gameTransact() {
 	case "lost":
 		addBalance(g.player, -g.bet)
 		g.bal -= g.bet
+	}
+}
+
+func (c *cardG) generateDeck(numofDecks int) {
+	cards := []string{"2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k", "a"}
+	suits := []string{"spade", "heart", "diamond", "club"}
+	for j := 0; j < numofDecks; j++ {
+		for _, suit := range suits {
+			for _, card := range cards {
+				c.deck = append(c.deck, card+"_"+suit)
+			}
+		}
+	}
+	for i := 0; i < 20; i++ {
+		rand.Shuffle(len(c.deck), func(i, j int) { c.deck[i], c.deck[j] = c.deck[j], c.deck[i] })
+	}
+}
+
+func (c *cardG) dealCard(hand string) {
+	if hand == "player" {
+		c.playerHand = append(c.playerHand, c.deck[0])
+		c.deck = c.deck[1:]
+	} else if hand == "jb" {
+		c.jBHand = append(c.jBHand, c.deck[0])
+		c.deck = c.deck[1:]
 	}
 }
