@@ -38,6 +38,8 @@ func startHiLo(player string, chanID string, bet int, bal int) {
 		return
 	}
 	game.hilogameLogic()
+	game.gameTransact()
+	game.logHiLo()
 	game.endGame(startHiLo)
 
 }
@@ -72,6 +74,4 @@ func (h *hiLoG) hilogameLogic() {
 	case "timeout":
 		h.result = "lost"
 	}
-	h.gameTransact()
-	h.logHiLo()
 }

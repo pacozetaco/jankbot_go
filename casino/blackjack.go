@@ -15,11 +15,10 @@ func startBlackJack(player string, mID string, bet int, bal int) {
 			mID:      mID,
 			pAButton: pAButton,
 		},
-		whosturn: "",
-		hit:      hitButton,
-		stand:    standButton,
-		split:    splitButton,
-		doubled:  doubleDButton,
+		hit:     hitButton,
+		stand:   standButton,
+		split:   splitButton,
+		doubled: doubleDButton,
 	}
 
 	game.generateDeck(1)
@@ -30,6 +29,12 @@ func startBlackJack(player string, mID string, bet int, bal int) {
 		userStates[player] = false
 		return
 	}
+	if game.choice != "blackjack" {
+		game.playerBJTurn()
+		game.jBBJTurn()
+	}
+	game.bJlogic()
+	// game.endGame(startBlackJack)
 }
 
 func (g *blackJackG) initializeBJ() error {
@@ -40,7 +45,7 @@ func (g *blackJackG) initializeBJ() error {
 	g.playerHandValue = bJHandValue(g.playerHand)
 	g.jBHandValue = bJHandValue(g.jBHand)
 	if g.playerHandValue == 21 || g.jBHandValue == 21 {
-		g.whosturn = "blackjack"
+		g.choice = "blackjack"
 	}
 	content := "Shuffling Deck...."
 	err := g.sendComplex(content, nil)
@@ -82,5 +87,23 @@ func bJHandValue(hand []string) int {
 		aces--
 	}
 	return handvalue
+}
 
+func (g *blackJackG) bJlogic() {
+
+}
+
+func (g *blackJackG) jBBJTurn() {
+	g.jBHandValue = bJHandValue(g.jBHand)
+	if g.choice == "bust" {
+		return
+	}
+	for g.jBHandValue < 17 {
+		g.dealCard("jb")
+		g.jBHandValue = bJHandValue(g.jBHand)
+	}
+}
+
+func (g *blackJackG) playerBJTurn() {
+	g.jBHandValue = bJHandValue(g.jBHand[:1])
 }

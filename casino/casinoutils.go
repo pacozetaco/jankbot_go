@@ -129,7 +129,6 @@ type deathRollG struct {
 type blackJackG struct {
 	bG
 	cardG
-	whosturn        string
 	stand           *discordgo.Button
 	hit             *discordgo.Button
 	doubled         *discordgo.Button
@@ -155,25 +154,17 @@ func (g *bG) handleButtonClick() error {
 	for {
 		select {
 		case i := <-bot.Chans[g.board.ID]:
+			err := bot.S.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseDeferredMessageUpdate,
+			})
+			if err != nil {
+				log.Printf("Failed to respond to interaction: %v\n", err)
+				return err
+			}
 			clicker := i.Member.User.Username
 			if clicker == g.player {
-				err := bot.S.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseDeferredMessageUpdate,
-				})
-				if err != nil {
-					log.Printf("Failed to respond to interaction: %v\n", err)
-					return err
-				}
 				g.choice = i.MessageComponentData().CustomID
 				return nil
-			} else {
-				err := bot.S.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseDeferredMessageUpdate,
-				})
-				if err != nil {
-					log.Printf("Failed to respond to interaction: %v\n", err)
-					return err
-				}
 			}
 		case <-timer.C:
 			log.Println("Timer expired, setting choice to timeout.")
@@ -250,9 +241,8 @@ func (g *bG) endGame(startFunc startFuncType) {
 	} else {
 		g.updateComplex(nil)
 	}
-	userStates[g.player] = false
 
-	// h.logHiLo()
+	userStates[g.player] = false
 
 	if g.msg.Components != nil {
 		g.handleButtonClick()
@@ -268,7 +258,6 @@ func (g *bG) endGame(startFunc startFuncType) {
 
 // add or subtract moneys from player depening on result
 func (g *bG) gameTransact() {
-
 	switch g.result {
 	case "won":
 		addBalance(g.player, g.bet)

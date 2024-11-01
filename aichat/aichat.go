@@ -13,7 +13,7 @@ import (
 
 func Chat(m *discordgo.MessageCreate) {
 	preface := "You are a Discord bot. Your name is JankBot. " + m.Author.Username + " is the person you're talking to. You will do you best to answer any questions they may have. They say: "
-	u, err := url.Parse("http://192.168.1.99:11434")
+	u, err := url.Parse("http://192.168.1.2:11434")
 	if err != nil {
 		log.Println(err)
 		return
