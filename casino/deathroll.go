@@ -46,6 +46,9 @@ func startDeathRoll(player string, mID string, bet int, bal int) {
 		return
 	}
 	game.drLogic()
+	game.gameTransact()
+	game.logDeathRoll()
+	game.msg.Content += fmt.Sprintf("\nYou %s %d coins.\nBalance: %d", game.result, game.bet, game.bal)
 	game.endGame(startDeathRoll)
 
 }
@@ -120,6 +123,4 @@ func (d *deathRollG) drLogic() {
 	case "you":
 		d.result = "lost"
 	}
-	d.gameTransact()
-	d.logDeathRoll()
 }

@@ -233,6 +233,20 @@ func (d *deathRollG) logDeathRoll() {
 	}
 }
 
+func (b *blackJackG) logBJ() {
+	createDBConnection()
+	defer closeDBConnection()
+	stmt, err := db.Prepare("INSERT INTO bj_log (date, time, player, bet, result) VALUES (?, ?, ?, ?, ?)")
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(time.Now().Format("2006-01-02"), time.Now().Format("15:04:05"), b.player, b.bet, b.result)
+	if err != nil {
+		return
+	}
+}
+
 //TODO
 
 // GAME LOGS - STATS

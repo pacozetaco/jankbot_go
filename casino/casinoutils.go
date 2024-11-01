@@ -1,9 +1,9 @@
 package casino
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -11,7 +11,6 @@ import (
 )
 
 // BUTTONS
-// play again button for all the games
 var pAButton = &discordgo.Button{
 	Label:    "Play Again?",
 	Style:    3,
@@ -63,7 +62,7 @@ var loButton = &discordgo.Button{
 
 var hitButton = &discordgo.Button{
 	Label:    "Hit",
-	Style:    3,
+	Style:    1,
 	Disabled: false,
 	CustomID: "hit",
 }
@@ -101,8 +100,10 @@ type bG struct {
 	mID      string
 	choice   string
 	pAButton *discordgo.Button
+	pic      string
 }
 
+// card game struct
 type cardG struct {
 	deck       []string
 	playerHand []string
@@ -125,7 +126,6 @@ type deathRollG struct {
 	first     string
 }
 
-// blackjack struct
 type blackJackG struct {
 	bG
 	cardG
@@ -137,7 +137,6 @@ type blackJackG struct {
 	jBHandValue     int
 }
 
-// hilo struct
 type hiLoG struct {
 	bG
 	diceG
@@ -205,6 +204,15 @@ func (g *bG) updateComplex(buttons []discordgo.Button) {
 func (b *bG) sendComplex(content string, buttons []discordgo.Button) error {
 	// Create a slice of MessageComponent to hold the buttons
 	var components []discordgo.MessageComponent
+	var discordFile *discordgo.File
+	file, err := os.Open(b.pic)
+	if err == nil {
+		discordFile = &discordgo.File{
+			Name:   "game_image.png",
+			Reader: file,
+		}
+	}
+	defer file.Close()
 	for _, button := range buttons {
 		components = append(components, button) // Append each button as a MessageComponent
 	}
@@ -215,13 +223,13 @@ func (b *bG) sendComplex(content string, buttons []discordgo.Button) error {
 				Components: components,
 			},
 		},
+		File: discordFile,
 	}
 
 	if buttons == nil {
 		b.msg.Components = []discordgo.MessageComponent{}
 	}
 
-	var err error
 	b.board, err = bot.S.ChannelMessageSendComplex(b.mID, b.msg)
 	if err != nil {
 		log.Println(err)
@@ -235,7 +243,6 @@ func (b *bG) sendComplex(content string, buttons []discordgo.Button) error {
 type startFuncType func(playerID string, mID string, bet int, balance int)
 
 func (g *bG) endGame(startFunc startFuncType) {
-	g.msg.Content += fmt.Sprintf("\nYou %s %d coins.\nBalance: %d", g.result, g.bet, g.bal)
 	if g.bal > g.bet {
 		g.updateComplex([]discordgo.Button{*pAButton})
 	} else {
@@ -265,6 +272,11 @@ func (g *bG) gameTransact() {
 	case "lost":
 		addBalance(g.player, -g.bet)
 		g.bal -= g.bet
+	}
+	var err error
+	g.bal, err = getBalance(g.player)
+	if err != nil {
+		log.Println(err)
 	}
 }
 

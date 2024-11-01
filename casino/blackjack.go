@@ -1,11 +1,25 @@
 package casino
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"strings"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/fogleman/gg"
+	"github.com/pacozetaco/jankbot_go/bot"
 )
 
 func startBlackJack(player string, mID string, bet int, bal int) {
+	if bet%2 != 0 {
+		_, err := bot.S.ChannelMessageSend(mID, "Bet must be even to play BlackJack.")
+		if err != nil {
+			log.Println(err)
+		}
+		userStates[player] = false
+		return
+	}
 
 	game := &blackJackG{
 		bG: bG{
@@ -34,7 +48,20 @@ func startBlackJack(player string, mID string, bet int, bal int) {
 		game.jBBJTurn()
 	}
 	game.bJlogic()
-	// game.endGame(startBlackJack)
+	game.gameTransact()
+	game.logBJ()
+	game.drawGame(false)
+	if ch, ok := bot.Chans[game.board.ID]; ok {
+		close(ch)
+		delete(bot.Chans, game.board.ID)
+		err = bot.S.ChannelMessageDelete(game.mID, game.board.ID)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	game.sendComplex("", nil)
+	os.Remove(game.pic)
+	game.endGame(startBlackJack)
 }
 
 func (g *blackJackG) initializeBJ() error {
@@ -52,6 +79,7 @@ func (g *blackJackG) initializeBJ() error {
 	if err != nil {
 		return err
 	}
+	g.msg.Content = ""
 	return nil
 }
 
@@ -91,11 +119,38 @@ func bJHandValue(hand []string) int {
 
 func (g *blackJackG) bJlogic() {
 
+	switch g.choice {
+	case "bust":
+		g.result = "lost"
+		return
+	case "blackjack":
+		if g.playerHandValue == 21 {
+			g.bet = g.bet + g.bet/2
+			g.result = "won"
+		} else {
+			g.result = "lost"
+		}
+		return
+	case "timeout":
+		g.result = "lost"
+		return
+	}
+	switch {
+	case g.jBHandValue > 21:
+		g.result = "won"
+		return
+	case g.playerHandValue > g.jBHandValue:
+		g.result = "won"
+	case g.playerHandValue == g.jBHandValue:
+		g.result = "pushed"
+	default:
+		g.result = "lost"
+	}
 }
 
 func (g *blackJackG) jBBJTurn() {
 	g.jBHandValue = bJHandValue(g.jBHand)
-	if g.choice == "bust" {
+	if g.choice == "bust" || g.choice == "timeout" {
 		return
 	}
 	for g.jBHandValue < 17 {
@@ -106,4 +161,134 @@ func (g *blackJackG) jBBJTurn() {
 
 func (g *blackJackG) playerBJTurn() {
 	g.jBHandValue = bJHandValue(g.jBHand[:1])
+gameLoop:
+	for {
+		g.playerHandValue = bJHandValue(g.playerHand)
+		close(bot.Chans[g.board.ID])
+		delete(bot.Chans, g.board.ID)
+		err := bot.S.ChannelMessageDelete(g.mID, g.board.ID)
+		if err != nil {
+			log.Println(err)
+		}
+		if g.playerHandValue > 21 {
+			g.choice = "bust"
+			break gameLoop
+		}
+		if g.playerHandValue == 21 {
+			break gameLoop
+		}
+
+		g.drawGame(true)
+
+		var buttons []discordgo.Button
+		switch g.choice {
+		case "":
+			if g.bal >= g.bet*2 {
+				buttons = []discordgo.Button{*g.hit, *g.stand, *g.doubled}
+			} else {
+				buttons = []discordgo.Button{*g.hit, *g.stand}
+			}
+		default:
+			buttons = []discordgo.Button{*g.hit, *g.stand}
+		}
+
+		err = g.sendComplex("", buttons)
+		if err != nil {
+			log.Println(err)
+		}
+
+		err = g.handleButtonClick()
+		if err != nil {
+			log.Println(err)
+			break gameLoop
+		}
+		switch g.choice {
+		case "hit":
+			g.dealCard("player")
+		case "stand":
+			break gameLoop
+		case "double":
+			g.bet = g.bet * 2
+			g.dealCard("player")
+			g.playerHandValue = bJHandValue(g.playerHand)
+			if g.playerHandValue > 21 {
+				g.choice = "bust"
+			}
+			break gameLoop
+		case "timeout":
+			break gameLoop
+		}
+	}
+}
+
+func (g *bG) pasteCards(dc *gg.Context, hand []string, y int) {
+	cardWidth := 32
+	totalWidth := len(hand) * cardWidth
+	startX := (dc.Width() - totalWidth) / 2
+
+	for i, card := range hand {
+		cardPath := fmt.Sprintf("./assets/cards/%s.png", card)
+		cardImage, _ := gg.LoadImage(cardPath)
+		dc.DrawImage(cardImage, startX+i*cardWidth, y)
+	}
+}
+
+func (g *blackJackG) drawGame(hide bool) error {
+	const fontSize = 15
+	fontPath := "./assets/font/pixel_font.ttf"
+	tablePath := "./assets/tables/blackjack_table.png"
+	gamePicPath := fmt.Sprintf("./temp/%s_game.png", g.player)
+
+	tableImage, err := gg.LoadImage(tablePath)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	dc := gg.NewContextForImage(tableImage)
+
+	// Load font
+	if err := dc.LoadFontFace(fontPath, fontSize); err != nil {
+		log.Println(err)
+		return err
+	}
+
+	// Determine dealer hand
+	var dealerHand []string
+	if hide {
+		dealerHand = []string{"0_back", g.jBHand[0]}
+	} else {
+		dealerHand = g.jBHand
+	}
+	// Draw cards
+	g.pasteCards(dc, g.playerHand, 176)
+	g.pasteCards(dc, dealerHand, 32)
+
+	// Draw text
+	dc.SetRGB(0, 0, 0)
+	dc.DrawString(fmt.Sprintf("Jank: %d", g.jBHandValue), 23, 124)
+	dc.DrawString(fmt.Sprintf("You: %d", g.playerHandValue), 38, 146)
+	dc.DrawString("Bet", 176, 124)
+	dc.DrawString(fmt.Sprintf("%d", g.bet), 176, 146)
+
+	if g.result != "" {
+		switch g.result {
+		case "won":
+			dc.DrawString("WINNER", 10, 250)
+		case "lost":
+			dc.DrawString("LOSER", 10, 250)
+		case "pushed":
+			dc.DrawString("PUSH", 10, 250)
+		}
+		dc.DrawString(fmt.Sprintf("Coins:%d", g.bal), 10, 20)
+	}
+
+	// Save image
+	if err := dc.SavePNG(gamePicPath); err != nil {
+		log.Println(err)
+		return err
+	}
+	// Read the file as an io.Reader and prepare for sending (file to be read in later steps)
+	g.pic = gamePicPath
+	return nil
 }
