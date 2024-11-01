@@ -267,10 +267,10 @@ func (g *bG) endGame(startFunc startFuncType) {
 func (g *bG) gameTransact() {
 	switch g.result {
 	case "won":
-		addBalance(g.player, g.bet)
+		go addBalance(g.player, g.bet)
 		g.bal += g.bet
 	case "lost":
-		addBalance(g.player, -g.bet)
+		go addBalance(g.player, -g.bet)
 		g.bal -= g.bet
 	}
 }
@@ -285,7 +285,7 @@ func (c *cardG) generateDeck(numofDecks int) {
 			}
 		}
 	}
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 10; i++ {
 		rand.Shuffle(len(c.deck), func(i, j int) { c.deck[i], c.deck[j] = c.deck[j], c.deck[i] })
 	}
 }

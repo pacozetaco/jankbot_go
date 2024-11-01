@@ -51,6 +51,11 @@ func startBlackJack(player string, mID string, bet int, bal int) {
 
 	game.bJlogic()
 	game.gameTransact()
+	//if blackjack set the bet back to original value
+	if game.choice == "blackjack" && game.result == "won" {
+		game.bet = game.bet - game.bet/2
+	}
+
 	game.logBJ()
 	game.drawGame(false)
 
