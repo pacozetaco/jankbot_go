@@ -1,0 +1,16 @@
+
+{
+    "name": "jankbot_go_dev",
+    "image": "golang:1.23.2-alpine3.20",
+    "workspaceFolder": "/jankbot_go",
+
+    "postCreateCommand": "apk update && apk add --no-cache ffmpeg git",
+    
+    "remoteUser": "root",
+
+    "runArgs": [
+        "--name", "jankbot_dev",
+        "-v", "${localWorkspaceFolder}:/jankbot_go",
+        "-v", "/var/run/docker.sock:/var/run/docker.sock"
+    ]
+}

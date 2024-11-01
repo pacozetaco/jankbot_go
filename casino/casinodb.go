@@ -35,7 +35,7 @@ func createDBConnection() error {
 	user := os.Getenv("SQL_USER")
 	pass := os.Getenv("SQL_PASS")
 	host := os.Getenv("SQL_HOST")
-	port := os.Getenv("SQL_PORT")
+	port := "3306"
 	dbName := os.Getenv("SQL_DB")
 	connStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, pass, host, port, dbName)
 	var err error

@@ -166,7 +166,6 @@ func (g *bG) handleButtonClick() error {
 				return nil
 			}
 		case <-timer.C:
-			log.Println("Timer expired, setting choice to timeout.")
 			g.choice = "timeout"
 			return nil
 		}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/pacozetaco/jankbot_go/bot"
 	"github.com/pacozetaco/jankbot_go/handlers"
+	"github.com/pacozetaco/jankbot_go/jankservers"
 )
 
 func main() {
@@ -15,7 +16,7 @@ func main() {
 	//start up the on msg and button handler
 	bot.S.AddHandler(handlers.OnMessage)
 	bot.S.AddHandler(handlers.ButtonHandler)
-
+	go jankservers.StartServerMonitor()
 	//close the bot connection on exit / failure
 	defer bot.S.Close()
 
