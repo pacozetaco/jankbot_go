@@ -43,14 +43,17 @@ func startBlackJack(player string, mID string, bet int, bal int) {
 		userStates[player] = false
 		return
 	}
+
 	if game.choice != "blackjack" {
 		game.playerBJTurn()
 		game.jBBJTurn()
 	}
+
 	game.bJlogic()
 	game.gameTransact()
 	game.logBJ()
 	game.drawGame(false)
+
 	if ch, ok := bot.Chans[game.board.ID]; ok {
 		close(ch)
 		delete(bot.Chans, game.board.ID)
@@ -59,8 +62,11 @@ func startBlackJack(player string, mID string, bet int, bal int) {
 			log.Println(err)
 		}
 	}
+
 	game.sendComplex("", nil)
+
 	os.Remove(game.pic)
+
 	game.endGame(startBlackJack)
 }
 
@@ -202,6 +208,7 @@ gameLoop:
 			log.Println(err)
 			break gameLoop
 		}
+
 		switch g.choice {
 		case "hit":
 			g.dealCard("player")
@@ -239,6 +246,14 @@ func (g *blackJackG) drawGame(hide bool) error {
 	tablePath := "./assets/tables/blackjack_table.png"
 	gamePicPath := fmt.Sprintf("./temp/%s_game.png", g.player)
 
+	// Determine dealer hand
+	var dealerHand []string
+	if hide {
+		dealerHand = []string{"0_back", g.jBHand[0]}
+	} else {
+		dealerHand = g.jBHand
+	}
+
 	tableImage, err := gg.LoadImage(tablePath)
 	if err != nil {
 		log.Println(err)
@@ -251,14 +266,6 @@ func (g *blackJackG) drawGame(hide bool) error {
 	if err := dc.LoadFontFace(fontPath, fontSize); err != nil {
 		log.Println(err)
 		return err
-	}
-
-	// Determine dealer hand
-	var dealerHand []string
-	if hide {
-		dealerHand = []string{"0_back", g.jBHand[0]}
-	} else {
-		dealerHand = g.jBHand
 	}
 	// Draw cards
 	g.pasteCards(dc, g.playerHand, 176)
@@ -288,7 +295,7 @@ func (g *blackJackG) drawGame(hide bool) error {
 		log.Println(err)
 		return err
 	}
-	// Read the file as an io.Reader and prepare for sending (file to be read in later steps)
+
 	g.pic = gamePicPath
 	return nil
 }

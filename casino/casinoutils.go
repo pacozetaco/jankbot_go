@@ -188,11 +188,10 @@ func (g *bG) updateComplex(buttons []discordgo.Button) {
 		g.msg.Components = []discordgo.MessageComponent{}
 	}
 	updatedMsg := &discordgo.MessageEdit{
-		Channel:     g.board.ChannelID,
-		ID:          g.board.ID,
-		Content:     &g.msg.Content,
-		Components:  &g.msg.Components,
-		Attachments: &g.board.Attachments,
+		Channel:    g.board.ChannelID,
+		ID:         g.board.ID,
+		Content:    &g.msg.Content,
+		Components: &g.msg.Components,
 	}
 
 	_, err := bot.S.ChannelMessageEditComplex(updatedMsg)
@@ -205,6 +204,7 @@ func (b *bG) sendComplex(content string, buttons []discordgo.Button) error {
 	// Create a slice of MessageComponent to hold the buttons
 	var components []discordgo.MessageComponent
 	var discordFile *discordgo.File
+
 	file, err := os.Open(b.pic)
 	if err == nil {
 		discordFile = &discordgo.File{
@@ -236,14 +236,14 @@ func (b *bG) sendComplex(content string, buttons []discordgo.Button) error {
 		return err
 	}
 
-	bot.Chans[b.board.ID] = make(chan *discordgo.InteractionCreate)
+	bot.Chans[b.board.ID] = make(chan *discordgo.InteractionCreate, 10)
 	return nil
 }
 
 type startFuncType func(playerID string, mID string, bet int, balance int)
 
 func (g *bG) endGame(startFunc startFuncType) {
-	if g.bal > g.bet {
+	if g.bal >= g.bet {
 		g.updateComplex([]discordgo.Button{*pAButton})
 	} else {
 		g.updateComplex(nil)
@@ -272,11 +272,6 @@ func (g *bG) gameTransact() {
 	case "lost":
 		addBalance(g.player, -g.bet)
 		g.bal -= g.bet
-	}
-	var err error
-	g.bal, err = getBalance(g.player)
-	if err != nil {
-		log.Println(err)
 	}
 }
 
