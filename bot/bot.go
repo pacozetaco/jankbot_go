@@ -15,7 +15,7 @@ func init() {
 	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		log.Printf("Error loading .env file: %v", err)
 	}
 	//get the bot token from ENV
 	token := os.Getenv("BOT_TOKEN")
