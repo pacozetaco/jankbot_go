@@ -46,7 +46,7 @@ func startHiLo(player string, chanID string, bet int, bal int) {
 }
 
 func (h *hiLoG) initializeHiLo() error {
-	content := fmt.Sprintf("```HiLo! Bet: %d\nIs your roll higher or lower than 50? (/roll 1-100)```", h.bet)
+	content := fmt.Sprintf("HiLo! Bet: %d\nIs your roll higher or lower than 50? (/roll 1-100)", h.bet)
 	err := h.sendComplex(content, []discordgo.Button{*h.hi, *h.lo})
 	if err != nil {
 		return err
