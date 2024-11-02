@@ -1,0 +1,55 @@
+name: Deploy Bot with Docker
+run-name: ${{ gitea.actor }} is deploying the bot locally
+on: [push]
+
+jobs:
+  Deploy-Bot:
+    runs-on: alpine-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set the Docker tag
+        id: set-tag
+        run: |
+          TAG=${{ gitea.ref }}
+          TAG=${TAG/refs\/heads\//}  # Remove 'refs/heads/'
+          echo "TAG=${TAG}" >> $GITHUB_ENV  # Export TAG as an environment variable                    
+
+      - run: echo "The ${{ gitea.repository }} repository has been cloned to the runner."
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Stop and Remove Existing Container
+        run: |
+          CONTAINER_NAME="jankbot-go-container-${{ env.TAG }}"
+          if [ "$(docker ps -q -f name=${CONTAINER_NAME})" ]; then
+            docker stop ${CONTAINER_NAME} || true
+            docker rm ${CONTAINER_NAME} || true
+          fi                    
+
+      - name: Delete old Docker Image
+        run: |
+          docker rmi jankbot_go:${{ env.TAG }} || true                    
+
+      - name: Build Docker image
+        run: |
+          docker build -t jankbot_go:${{ env.TAG }} .                    
+
+      - name: Deploy using Docker 
+        run: |
+          docker run -d \
+          --name jankbot-go-container-${{ env.TAG }} \
+          -e TZ=America/New_York \
+          -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+          -e SQL_USER=${{ secrets.SQL_USER }} \
+          -e SQL_PASS=${{ secrets.SQL_PASS }} \
+          -e SQL_HOST=${{ secrets.SQL_HOST }} \
+          -e SQL_DB=${{ secrets.SQL_DB }} \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          --restart unless-stopped \
+          jankbot_go:${{ env.TAG }}
+
+      - run: echo "Deployment completed. This job's status is ${{ job.status }}."
