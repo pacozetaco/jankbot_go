@@ -40,7 +40,7 @@ func startHiLo(player string, chanID string, bet int, bal int) {
 	game.hilogameLogic()
 	game.gameTransact()
 	game.logHiLo()
-	game.msg.Content += fmt.Sprintf("\nYou %s %d coins.\nBalance: %d", game.result, game.bet, game.bal)
+	game.msg.Content += fmt.Sprintf("\nYou chose %s and rolled a %d. You %s %d coins.\nBalance: %d", game.choice, game.roll, game.result, game.bet, game.bal)
 	game.endGame(startHiLo)
 
 }
